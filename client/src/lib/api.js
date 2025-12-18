@@ -1,4 +1,10 @@
-import { apiUrl } from "./apiBase.js";
+// Central API base helper with dev fallback
+export const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(
+  /\/$/,
+  ""
+);
+export const apiUrl = (path) =>
+  `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
 const defaultHeaders = () => {
   const token = localStorage.getItem("token");
