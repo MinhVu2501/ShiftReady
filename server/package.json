@@ -1,0 +1,25 @@
+{
+  "name": "shiftready-server",
+  "version": "1.0.0",
+  "description": "ShiftReady API for AI mock interviews",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^4.55.4",
+    "pg": "^8.13.1",
+    "stripe": "^16.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
+
