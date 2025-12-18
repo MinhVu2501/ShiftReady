@@ -1,4 +1,4 @@
-const API_BASE = "/api";
+import { apiUrl } from "./apiBase.js";
 
 const defaultHeaders = () => {
   const token = localStorage.getItem("token");
@@ -17,11 +17,11 @@ const handle = async (res) => {
 
 export const api = {
   get: (path) =>
-    fetch(`${API_BASE}${path}`, {
+    fetch(apiUrl(path), {
       headers: { ...defaultHeaders() },
     }).then(handle),
   post: (path, body) =>
-    fetch(`${API_BASE}${path}`, {
+    fetch(apiUrl(path), {
       method: "POST",
       headers: { "Content-Type": "application/json", ...defaultHeaders() },
       body: JSON.stringify(body),
