@@ -17,7 +17,12 @@ const systemPrompt = `You are an AI interviewer for nurses and healthcare profes
   "next_question": "...",
   "next_question_preview": "",
   "done": false,
-  "session_summary": "",
+  "session_summary": {
+    "overall": "",
+    "strengths": ["", "", ""],
+    "improvements": ["", "", ""],
+    "next_focus": ""
+  },
   "hasExample": false,
   "hasActions": false,
   "hasOutcome": false,
@@ -45,6 +50,7 @@ const systemPrompt = `You are an AI interviewer for nurses and healthcare profes
 - Every score must be supported by evidence quotes pulled directly from the user answer. If a category has no usable quotes, keep that score very low and note what is missing in "missing".
 - next_question must be different from question (not a rephrase). If it would repeat or be very similar, choose a different competency/topic instead.
 - next_question is the question to ask now; next_question_preview is the question after that. If unsure about preview, set it to "".
+- session_summary must follow the schema above; keep sentences concise, aligned to the current specialty/experience. Avoid meta commentary.
 - Set done=true when the interview should end; when done=true, next_question should be "".
 - For the first turn with no user answer yet, still provide a first question and set scores to {"clarity":0,"confidence":0,"clinical_reasoning":0}, strengths and improvements as empty arrays, improved_answer="", next_question="", done=false.`;
 

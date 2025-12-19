@@ -22,6 +22,8 @@ Fill DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, STRIPE_* keys.
 3) Init database (example)
 ```
 psql "$DATABASE_URL" -f db/init.sql
+# If adding feedback table separately:
+psql "$DATABASE_URL" -f db/feedback.sql
 ```
 
 4) Run backend
@@ -50,6 +52,21 @@ npm run dev
 - GET /api/interviews/:id
 - POST /api/billing/checkout
 - POST /api/billing/webhook
+- POST /api/feedback
+- GET /api/admin/feedback (admin)
+- GET /api/admin/feedback.csv (admin)
+
+## Feedback endpoints (examples)
+```
+# submit feedback (requires auth token)
+curl -X POST "$API_BASE/api/feedback" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId":"<uuid>","feltReal":4,"helpfulFeedback":4,"scoreFair":4,"issues":["too_generic"],"wouldUseAgain":"yes","note":""}'
+
+# admin list (requires admin token)
+curl -H "Authorization: Bearer $ADMIN_TOKEN" "$API_BASE/api/admin/feedback"
+```
 
 ## Notes
 - Free trial: one quick session (marks trial_used). Paid entitlements unlocked via Stripe webhook.

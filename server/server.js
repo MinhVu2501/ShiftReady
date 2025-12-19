@@ -5,6 +5,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
 import errorHandler from "./middleware/error.js";
 
 const app = express();
@@ -27,6 +28,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/billing", billingRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 app.use(errorHandler);
 

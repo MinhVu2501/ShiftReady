@@ -588,6 +588,7 @@ export const answerQuestion = async (req, res, next) => {
             improvements: finalImprovements,
             evidence: ai.evidence || {},
             missing: ai.missing || [],
+            summary: ai.session_summary || null,
           flags: {
               hasExample: analysis.hasExample,
               hasActions: analysis.hasActions,
@@ -600,13 +601,13 @@ export const answerQuestion = async (req, res, next) => {
               clinicalKeywords: analysis.clinicalKeywords,
               ethicsSignals: analysis.ethicsSignals,
             },
-          finalAdjustedScores: finalScores,
-          _debug: {
-            detectedTier: lowQuality.tier,
-            safetySignalsCount: safetySignals.count,
-            rawAiScores: ai.scores,
-            finalScores,
-          },
+            finalAdjustedScores: finalScores,
+            _debug: {
+              detectedTier: lowQuality.tier,
+              safetySignalsCount: safetySignals.count,
+              rawAiScores: ai.scores,
+              finalScores,
+            },
           }),
           tunedImproved,
           JSON.stringify(finalScores),
@@ -627,6 +628,7 @@ export const answerQuestion = async (req, res, next) => {
             improvements: finalImprovements,
             evidence: ai.evidence || {},
             missing: ai.missing || [],
+            summary: ai.session_summary || null,
             flags: {
               hasExample: analysis.hasExample,
               hasActions: analysis.hasActions,
@@ -640,12 +642,12 @@ export const answerQuestion = async (req, res, next) => {
               ethicsSignals: analysis.ethicsSignals,
             },
             finalAdjustedScores: finalScores,
-          _debug: {
-            detectedTier: lowQuality.tier,
-            safetySignalsCount: safetySignals.count,
-            rawAiScores: ai.scores,
-            finalScores,
-          },
+            _debug: {
+              detectedTier: lowQuality.tier,
+              safetySignalsCount: safetySignals.count,
+              rawAiScores: ai.scores,
+              finalScores,
+            },
           }),
           tunedImproved,
           JSON.stringify(finalScores),
@@ -673,6 +675,7 @@ export const answerQuestion = async (req, res, next) => {
           improved_answer: tunedImproved,
           evidence: ai.evidence || {},
           missing: ai.missing || [],
+          summary: ai.session_summary || null,
           _debug: {
             detectedTier: lowQuality.tier,
             safetySignalsCount: safetySignals.count,
@@ -711,6 +714,7 @@ export const answerQuestion = async (req, res, next) => {
         improved_answer: tunedImproved,
         evidence: ai.evidence || {},
         missing: ai.missing || [],
+        summary: ai.session_summary || null,
         _debug: {
           detectedTier: lowQuality.tier,
           safetySignalsCount: safetySignals.count,
@@ -786,6 +790,8 @@ export const getInterview = async (req, res, next) => {
 
     const strengthsAll = answered.flatMap((t) => t.ai_feedback_json?.strengths || []);
     const improvementsAll = answered.flatMap((t) => t.ai_feedback_json?.improvements || []);
+    const summaryFromTurns = [...answered].reverse().find((t) => t.ai_feedback_json?.summary)?.ai_feedback_json?.summary;
+
     const topN = (arr, n) => {
       const freq = arr.reduce((m, item) => {
         const key = item.trim().toLowerCase();
@@ -798,17 +804,17 @@ export const getInterview = async (req, res, next) => {
         .slice(0, n)
         .map(([k]) => k);
     };
-    const topStrengths = topN(strengthsAll, 2);
-    const topGaps = topN(improvementsAll, 1);
-    const summaryParts = [];
-    if (topStrengths.length) {
-      summaryParts.push(`You consistently demonstrated ${topStrengths.join(" and ")}.`);
-    }
-    if (topGaps.length) {
-      summaryParts.push(`Your biggest gap was ${topGaps[0]}.`);
-    }
-    summaryParts.push("Next: practice giving a specific action and outcome for each scenario.");
-    const session_summary = summaryParts.join(" ");
+    const topStrengths = topN(strengthsAll, 3);
+    const topGaps = topN(improvementsAll, 3);
+
+    const fallbackSummary = {
+      overall: `Interview summary for ${session.specialty || "your role"} (${session.experience_level || "experience"}).`,
+      strengths: topStrengths.slice(0, 3),
+      improvements: topGaps.slice(0, 3),
+      next_focus: "Practice stating one concrete action and outcome for each scenario.",
+    };
+
+    const session_summary = summaryFromTurns || fallbackSummary;
 
     return res.json({ session, turns: enrichedTurns, average_scores, overall_level, session_summary });
   } catch (err) {
