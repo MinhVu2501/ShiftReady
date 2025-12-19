@@ -1,18 +1,31 @@
 import "dotenv/config";
 import { query } from "../db/client.js";
 
-const validateFeedback = (body) => {
+// Accept both legacy and alternate field names to avoid frontend mismatches
+const normalizeFeedback = (body) => {
+  return {
+    sessionId: body.sessionId || body.session_id,
+    feltReal: body.feltReal ?? body.realism,
+    helpfulFeedback: body.helpfulFeedback ?? body.helpfulness,
+    scoreFair: body.scoreFair ?? body.fairness,
+    issues: Array.isArray(body.issues) ? body.issues : [],
+    wouldUseAgain: body.wouldUseAgain || body.would_use_again,
+    note: body.note || body.notes || "",
+  };
+};
+
+const validateFeedback = (payload) => {
   const required = ["sessionId", "feltReal", "helpfulFeedback", "scoreFair", "wouldUseAgain"];
   for (const field of required) {
-    if (body[field] === undefined || body[field] === null) {
+    if (payload[field] === undefined || payload[field] === null) {
       return `Missing field: ${field}`;
     }
   }
   const inRange = (v) => Number.isInteger(v) && v >= 1 && v <= 5;
-  if (!inRange(body.feltReal)) return "feltReal must be 1-5";
-  if (!inRange(body.helpfulFeedback)) return "helpfulFeedback must be 1-5";
-  if (!inRange(body.scoreFair)) return "scoreFair must be 1-5";
-  if (!["yes", "maybe", "no"].includes(String(body.wouldUseAgain))) {
+  if (!inRange(payload.feltReal)) return "feltReal must be 1-5";
+  if (!inRange(payload.helpfulFeedback)) return "helpfulFeedback must be 1-5";
+  if (!inRange(payload.scoreFair)) return "scoreFair must be 1-5";
+  if (!["yes", "maybe", "no"].includes(String(payload.wouldUseAgain))) {
     return "wouldUseAgain must be yes|maybe|no";
   }
   return null;
@@ -20,25 +33,26 @@ const validateFeedback = (body) => {
 
 export const createFeedback = async (req, res, next) => {
   try {
-    const errMsg = validateFeedback(req.body);
+    const payload = normalizeFeedback(req.body);
+    const errMsg = validateFeedback(payload);
     if (errMsg) return res.status(400).json({ message: errMsg });
 
-    const issues = Array.isArray(req.body.issues) ? req.body.issues : [];
+    const issues = payload.issues;
     await query(
       `INSERT INTO feedback (user_id, session_id, felt_real, helpful_feedback, score_fair, issues, would_use_again, note)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
         req.user?.id || null,
-        req.body.sessionId,
-        req.body.feltReal,
-        req.body.helpfulFeedback,
-        req.body.scoreFair,
+        payload.sessionId,
+        payload.feltReal,
+        payload.helpfulFeedback,
+        payload.scoreFair,
         issues,
-        req.body.wouldUseAgain,
-        req.body.note || null,
+        payload.wouldUseAgain,
+        payload.note || null,
       ]
     );
-    return res.json({ ok: true });
+    return res.json({ success: true });
   } catch (err) {
     return next(err);
   }
