@@ -1,58 +1,81 @@
 import "dotenv/config";
 import { query } from "../db/client.js";
 
-// Accept both legacy and alternate field names to avoid frontend mismatches
+const asRating = (v) => {
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 1 || n > 5) return null;
+  return n;
+};
+
 const normalizeFeedback = (body) => {
+  const realistic = asRating(body.realistic ?? body.feltReal ?? body.realism);
+  const helpful = asRating(body.helpful ?? body.helpfulFeedback ?? body.helpfulness);
+  const scoringFair = asRating(body.scoringFair ?? body.scoreFair ?? body.fairness);
+
+  const issues = Array.isArray(body.issues)
+    ? body.issues.filter((i) => typeof i === "string")
+    : [];
+
+  const wouldUseAgainRaw = body.wouldUseAgain || body.would_use_again;
+  const wouldUseAgain =
+    typeof wouldUseAgainRaw === "string"
+      ? wouldUseAgainRaw.toLowerCase()
+      : wouldUseAgainRaw === true
+      ? "yes"
+      : wouldUseAgainRaw === false
+      ? "no"
+      : null;
+
+  const notes = typeof body.notes === "string" ? body.notes : typeof body.note === "string" ? body.note : "";
+
+  const sessionId = body.sessionId || body.session_id || null;
+
   return {
-    sessionId: body.sessionId || body.session_id || null,
-    realistic: body.realistic ?? body.feltReal ?? body.realism,
-    helpful: body.helpful ?? body.helpfulFeedback ?? body.helpfulness,
-    scoringFair: body.scoringFair ?? body.scoreFair ?? body.fairness,
-    issues: Array.isArray(body.issues) ? body.issues : [],
-    wouldUseAgain: body.wouldUseAgain || body.would_use_again,
-    notes: body.notes || body.note || "",
+    realistic,
+    helpful,
+    scoringFair,
+    issues,
+    wouldUseAgain,
+    notes,
+    sessionId,
   };
 };
 
 const validateFeedback = (payload) => {
-  const requiredNums = ["realistic", "helpful", "scoringFair"];
-  for (const field of requiredNums) {
-    if (payload[field] === undefined || payload[field] === null) return `Missing field: ${field}`;
-    if (!Number.isInteger(payload[field]) || payload[field] < 1 || payload[field] > 5)
-      return `${field} must be 1-5`;
+  const required = ["realistic", "helpful", "scoringFair"];
+  for (const field of required) {
+    if (payload[field] === null || payload[field] === undefined) return `Missing or invalid ${field}`;
   }
-  if (!["yes", "maybe", "no", undefined, null].includes(payload.wouldUseAgain)) {
+  if (payload.wouldUseAgain && !["yes", "maybe", "no"].includes(payload.wouldUseAgain)) {
     return "wouldUseAgain must be yes|maybe|no";
   }
   return null;
 };
 
 export const createFeedback = async (req, res) => {
-  // Temporary debug: log received keys (not token) for production tracing
   console.log("feedback payload keys:", Object.keys(req.body || {}));
-  if (!req.user?.id) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+  if (!req.user?.id) return res.status(401).json({ message: "Unauthorized" });
+
   const payload = normalizeFeedback(req.body);
   const errMsg = validateFeedback(payload);
   if (errMsg) return res.status(400).json({ message: errMsg });
 
-  // Issues stored as array (feedback table uses TEXT[]); fallback to empty array
-  const issues = Array.isArray(payload.issues) ? payload.issues : [];
+  const issuesString = payload.issues.length ? payload.issues.join(", ") : "";
+  const sessionId = payload.sessionId || null;
 
   try {
     const insertSql = `
-      INSERT INTO feedback (user_id, session_id, felt_real, helpful_feedback, score_fair, issues, would_use_again, note)
+      INSERT INTO feedback (user_id, session_id, realistic, helpful, scoring_fair, issues, would_use_again, notes)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       RETURNING id
     `;
     const result = await query(insertSql, [
       req.user.id,
-      payload.sessionId,
+      sessionId,
       payload.realistic,
       payload.helpful,
       payload.scoringFair,
-      issues,
+      issuesString,
       payload.wouldUseAgain || null,
       payload.notes || null,
     ]);
