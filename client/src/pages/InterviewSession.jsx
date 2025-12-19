@@ -23,7 +23,7 @@ export default function InterviewSession() {
   useEffect(() => {
     // Hydrate session state from server so resume works after navigation/refresh
     api
-      .get(`/interviews/${id}`)
+      .get(`/api/interviews/${id}`)
       .then((data) => {
         setSessionMeta(data.session);
         if (data.session?.ended_at) {
@@ -77,7 +77,7 @@ export default function InterviewSession() {
     setLoading(true);
     setError("");
     try {
-      const data = await api.post(`/interviews/${id}/answer`, {
+      const data = await api.post(`/api/interviews/${id}/answer`, {
         question,
         answer,
       });

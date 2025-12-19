@@ -19,7 +19,7 @@ export default function InterviewSetup() {
     setError("");
     setLoading(true);
     try {
-      const data = await api.post("/interviews/start", form);
+      const data = await api.post("/api/interviews/start", form);
       sessionStorage.setItem(
         `session-${data.session.id}-question`,
         data.question

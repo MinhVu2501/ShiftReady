@@ -10,7 +10,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     api
-      .get("/interviews")
+      .get("/api/interviews")
       .then((data) => setSessions(data.sessions))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));

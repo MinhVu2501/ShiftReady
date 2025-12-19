@@ -9,7 +9,7 @@ export default function InterviewReport() {
 
   useEffect(() => {
     api
-      .get(`/interviews/${id}`)
+      .get(`/api/interviews/${id}`)
       .then(setData)
       .catch((err) => setError(err.message));
   }, [id]);
